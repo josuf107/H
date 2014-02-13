@@ -3,7 +3,7 @@ module H.Parse where
 import H.Data
 
 import Control.Applicative
-import qualified Data.Text as T
+import Control.Monad
 import Data.Time
 import Text.Parsec (modifyState)
 import Text.Parsec.String
@@ -17,17 +17,20 @@ modifyAndReturn f = do
     modifyState f
     getState
 
+vchar :: Char -> GenParser Char a ()
+vchar = void . char
+
 taskParser :: GenParser Char Task Task
-taskParser = do
+taskParser =
     P.optional (try doneParser)
-    many (choice
+    *> many (choice
         [ tagParser
         , contextParser
         , timesParser
         , startParser
         , descriptionParser
         ])
-    modifyAndReturn normalize
+    *> modifyAndReturn normalize
 
 descriptionParser :: GenParser Char Task Task
 descriptionParser = do
@@ -35,37 +38,35 @@ descriptionParser = do
     modifyAndReturn (describe d)
 
 doneParser :: GenParser Char Task ()
-doneParser = do
-    char 'x' >> space
-    modifyState complete
+doneParser = char 'x' *> space *> modifyState complete
 
 contextParser :: GenParser Char Task Task
 contextParser = do
-    char '@'
+    vchar '@'
     c <- P.many1 alphaNum
     spaces
     modifyAndReturn (contextualize c)
 
 tagParser :: GenParser Char Task Task
 tagParser = do
-    char '+'
+    vchar '+'
     t <- P.many1 alphaNum
     spaces
     modifyAndReturn (tag t)
 
 startParser :: GenParser Char Task Task
 startParser = do
-    char '{'
+    vchar '{'
     spaces
     mon <- read <$> many1 digit
-    char '/'
+    vchar '/'
     d <-  read <$> many1 digit
-    char '/'
+    vchar '/'
     y <-  read <$> many1 digit
     spaces
     ts <- choice [timeString, return 0]
     spaces
-    char '}'
+    vchar '}'
     spaces
     modifyAndReturn (start (lt mon d y ts))
     where
@@ -76,15 +77,15 @@ startParser = do
 
 timesParser :: GenParser Char Task Task
 timesParser = do
-    char '('
+    vchar '('
     ts <- choice [timeString, return 0]
     spaces
     P.optional $ do
-        char ','
+        vchar ','
         ss <- choice [timeString, return 0]
         modifyState (spend ss)
     spaces
-    char ')'
+    vchar ')'
     spaces
     modifyAndReturn (estimate ts)
 
@@ -99,14 +100,14 @@ timeString =
 hourMinuteParser :: GenParser Char Task DiffTime
 hourMinuteParser = do
     h <- read <$> many1 digit
-    char ':'
+    vchar ':'
     m <- read <$> many1 digit
     return (hours h + minutes m)
 
 shortTimeParser :: (Int -> DiffTime) -> Char -> GenParser Char Task DiffTime
 shortTimeParser f c = do
     n <- many1 digit
-    char c
+    vchar c
     return . f . read $ n
 
 minuteParser :: GenParser Char Task DiffTime
