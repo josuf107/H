@@ -3,7 +3,6 @@ module H.Test where
 import H.Data
 import H.Parse
 
-import Data.Either
 import Data.Time
 import Test.HUnit
 import Test.QuickCheck
