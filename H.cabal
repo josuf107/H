@@ -22,3 +22,4 @@ executable H
                         , HUnit
                         , Safe
                         , parsec
+                        , text-format
