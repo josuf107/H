@@ -1,6 +1,7 @@
 module H.Test where
 
-import H
+import H.Data
+import H.Parse
 
 import Data.Either
 import Data.Time
