@@ -96,11 +96,11 @@ normalize t = t { description = strip . description $ t }
 strip :: String -> String
 strip = T.unpack . T.strip . T.pack
 
--- Visible for testing only
+-- Visible for testing only (here to avoid orphans)
 instance Arbitrary Task where
-    arbitrary = (start <$> arbitrary)
-        <.> (spend <$> arbitrary)
-        <.> (estimate <$> arbitrary)
+    arbitrary = (start <$> aLocalTime)
+        <.> (spend <$> aDiffTime)
+        <.> (estimate <$> aDiffTime)
         <.> (contextualize <$> nonEmptyAlphaNums)
         <.> (tag <$> nonEmptyAlphaNums)
         <.> (describe <$> nonEmptyAlphaNums)
@@ -113,22 +113,22 @@ nonEmptyAlphaNums = (getNonEmpty <$> arbitrary)
 isAlphaNum :: Char -> Bool
 isAlphaNum = (`elem` (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']))
 
-instance Arbitrary DiffTime where
-    arbitrary =
-        ((+) . hours
-            <$> (getNonNegative <$> arbitrary `suchThat` (<24)))
-        <*> (minutes
-            <$> (getNonNegative <$> arbitrary `suchThat` (<60)))
+aDiffTime :: Gen DiffTime
+aDiffTime =
+    ((+) . hours
+        <$> (getNonNegative <$> arbitrary `suchThat` (<24)))
+    <*> (minutes
+        <$> (getNonNegative <$> arbitrary `suchThat` (<60)))
 
-instance Arbitrary TimeOfDay where
-    arbitrary = timeToTimeOfDay <$> arbitrary
+aTimeOfDay :: Gen TimeOfDay
+aTimeOfDay = timeToTimeOfDay <$> aDiffTime
 
-instance Arbitrary LocalTime where
-    arbitrary = LocalTime
-        <$> (fromGregorian 2014
-            <$> (getNonNegative <$> arbitrary)
-            <*> (getNonNegative <$> arbitrary))
-        <*> arbitrary
+aLocalTime :: Gen LocalTime
+aLocalTime = LocalTime
+    <$> (fromGregorian 2014
+        <$> (getNonNegative <$> arbitrary)
+        <*> (getNonNegative <$> arbitrary))
+    <*> aTimeOfDay
 
 (<.>) :: Applicative f => f (b -> c) -> f (a -> b) -> f (a -> c)
 f <.> g = ((.) <$> f) <*> g
