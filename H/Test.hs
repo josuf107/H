@@ -7,7 +7,6 @@ import Data.Either
 import Data.Time
 import Test.HUnit
 import Test.QuickCheck
-import Test.QuickCheck.Property as QC
 
 runTests :: IO Counts
 runTests = do
