@@ -77,11 +77,11 @@ startParser = do
 timesParser :: GenParser Char Task Task
 timesParser = do
     char '('
-    ts <- timeString
+    ts <- choice [timeString, return 0]
     spaces
     P.optional $ do
         char ','
-        ss <- timeString
+        ss <- choice [timeString, return 0]
         modifyState (spend ss)
     spaces
     char ')'
@@ -94,7 +94,6 @@ timeString =
             [ minuteParser
             , hourParser
             , hourMinuteParser
-            , dayParser
             ]))
 
 hourMinuteParser :: GenParser Char Task DiffTime
@@ -115,6 +114,3 @@ minuteParser = shortTimeParser minutes 'm'
 
 hourParser :: GenParser Char Task DiffTime
 hourParser = shortTimeParser hours 'h'
-
-dayParser :: GenParser Char Task DiffTime
-dayParser = shortTimeParser days 'd'

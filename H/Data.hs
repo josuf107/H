@@ -1,13 +1,14 @@
 module H.Data where
 
-import Data.Time
-
+import Control.Applicative
 import qualified Data.List as L
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import Data.Text.Lazy.Builder (toLazyText)
 import Data.Text.Format (left)
 import Data.Text.Buildable (Buildable)
+import Data.Time
+import Test.QuickCheck
 
 data Task = Task
     { description :: String
@@ -97,3 +98,40 @@ normalize t = t { description = strip . description $ t }
 
 strip :: String -> String
 strip = T.unpack . T.strip . T.pack
+
+-- Visible for testing only
+instance Arbitrary Task where
+    arbitrary = (start <$> arbitrary)
+        <.> (spend <$> arbitrary)
+        <.> (estimate <$> arbitrary)
+        <.> (contextualize <$> nonEmptyAlphaNums)
+        <.> (tag <$> nonEmptyAlphaNums)
+        <.> (describe <$> nonEmptyAlphaNums)
+        <*> pure emptyTask
+
+nonEmptyAlphaNums :: Gen String
+nonEmptyAlphaNums = (getNonEmpty <$> arbitrary)
+    `suchThat` all isAlphaNum
+
+isAlphaNum :: Char -> Bool
+isAlphaNum = (`elem` (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']))
+
+instance Arbitrary DiffTime where
+    arbitrary =
+        ((+) . hours
+            <$> (getNonNegative <$> arbitrary `suchThat` (<24)))
+        <*> (minutes
+            <$> (getNonNegative <$> arbitrary `suchThat` (<60)))
+
+instance Arbitrary TimeOfDay where
+    arbitrary = timeToTimeOfDay <$> arbitrary
+
+instance Arbitrary LocalTime where
+    arbitrary = LocalTime
+        <$> (fromGregorian 2014
+            <$> (getNonNegative <$> arbitrary)
+            <*> (getNonNegative <$> arbitrary))
+        <*> arbitrary
+
+(<.>) :: Applicative f => f (b -> c) -> f (a -> b) -> f (a -> c)
+f <.> g = ((.) <$> f) <*> g
