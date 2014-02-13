@@ -8,6 +8,6 @@ run = do
     putStrLn "H\n\n"
     putStrLn "Enter task: "
     t <- getLine
-    case (fmap encode (parseTask t)) of
+    case fmap encode (parseTask t) of
         (Right s) -> putStrLn s
         (Left e) -> print e
