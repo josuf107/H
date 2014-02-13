@@ -1,4 +1,6 @@
 module Main where
 
+import H
+
 main :: IO ()
-main = putStrLn "Nothing to do"
+main = run

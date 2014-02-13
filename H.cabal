@@ -23,3 +23,5 @@ executable H
                         , Safe
                         , parsec
                         , text-format
+                        , time
+                        , text
