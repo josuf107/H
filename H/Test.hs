@@ -6,9 +6,13 @@ import H.Parse
 import Data.Either
 import Data.Time
 import Test.HUnit
+import Test.QuickCheck
+import Test.QuickCheck.Property as QC
 
 runTests :: IO Counts
-runTests = runTestTT enabledTests
+runTests = do
+    mapM_ quickCheck enabledChecks
+    runTestTT enabledTests
 
 enabledTests :: Test
 enabledTests = TestList
@@ -30,6 +34,11 @@ parseTests = TestList
     , testTimed3
     , testTimed4
     , testStarted
+    ]
+
+enabledChecks :: [Property]
+enabledChecks =
+    [ checkReadWrite
     ]
 
 rightOrFail :: (Show a, Show b, Eq b) => Either a b -> b -> Test
@@ -105,3 +114,10 @@ testStarted = rightOrFail
         . estimate (hours 2)
         . task
         $ "do this")
+
+rightOrWrong :: (Show a, Eq b) => Either a b -> b -> Bool
+rightOrWrong (Right x) y = x == y
+rightOrWrong (Left x) _ = error (show x)
+
+checkReadWrite :: Property
+checkReadWrite = label "read write iso" (\s -> rightOrWrong (parseTask . encode $ s) s)
